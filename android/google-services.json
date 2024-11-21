@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "217598070992",
+    "firebase_url": "https://smokeless-7abc9-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "smokeless-7abc9",
+    "storage_bucket": "smokeless-7abc9.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:217598070992:android:85d2f319b0754723f5ced5",
+        "android_client_info": {
+          "package_name": "com.smokeless.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDtZ09J5aDaoXx1mMc6yOS6P1dIyCzH_Tk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
