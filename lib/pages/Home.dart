@@ -4,7 +4,8 @@ import 'package:smokeless/components/stopwatch.dart';
 import 'package:smokeless/components/carousel.dart';
 import 'package:smokeless/styles/app-text-styles.dart';
 import 'package:smokeless/pages/comunity.dart';
-import 'package:smokeless/pages/profile.dart';// Pastikan import stopwatch dari components
+import 'package:smokeless/pages/profile.dart';
+import 'package:smokeless/services/firestore.dart';// Pastikan import stopwatch dari components
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -66,15 +67,27 @@ class HomeContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
-  final GlobalKey<StopwatchWidgetState> stopwatchKey = GlobalKey<StopwatchWidgetState>();
+  //final GlobalKey<StopwatchWidgetState> stopwatchKey = GlobalKey<StopwatchWidgetState>();
 
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Color(0xFFAA0810), // Warna AppBar
-        title: Row(
+        title:FutureBuilder<Map<String, dynamic>?>(
+          future: FirestoreService().fetchUserProfile(),  // Memanggil fungsi fetchUserProfile() untuk mengambil data pengguna
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Text('Hello, User!', style: TextStyle(color: Colors.white));
+            } else if (snapshot.hasError) {
+              return Text("Error: ${snapshot.error}", style: const TextStyle(color: Colors.white));
+            } else if (!snapshot.hasData) {
+              return const Text("Hello, User!", style: TextStyle(color: Colors.white));
+            } else {
+              var userData = snapshot.data!;
+              String firstName = userData['first_name'] ?? "User";
+              return Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text('Hello, User !', style: AppTextStyles.headline),
+            Text('Hello, $firstName !', style: AppTextStyles.headline),
             Row(
               children: [
                 IconButton(
@@ -93,6 +106,9 @@ class HomeContent extends StatelessWidget {
               ],
             ),
           ],
+        );
+          }
+          },
         ),
       ),
       body: Padding(
@@ -124,7 +140,7 @@ class HomeContent extends StatelessWidget {
                       ),
                     ),
                   ),
-                  StopwatchWidget(key: stopwatchKey),
+                 // StopwatchWidget(key: stopwatchKey),
                   Text(
                     'Jam Menit Detik',
                     style: GoogleFonts.quicksand(
@@ -149,7 +165,7 @@ class HomeContent extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
                   Text(
-                    'Today Smoked: 2',
+                    '',
                     style: GoogleFonts.quicksand(
                       textStyle: TextStyle(
                         fontSize: 16,
@@ -161,7 +177,9 @@ class HomeContent extends StatelessWidget {
                   const SizedBox(width: 60,),
                   FilledButton(
                     onPressed: () {
-                      stopwatchKey.currentState?.resetTimer();
+                      FirestoreService().incrementCigarettesToday();
+                     
+                      
                     },
                     style: FilledButton.styleFrom(
                       backgroundColor: Colors.white,
@@ -207,13 +225,44 @@ class HomeContent extends StatelessWidget {
                 width: 2.0),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Row(
+              child: StreamBuilder<List<Map<String, dynamic>>>(
+  stream: FirestoreService().fetchSmokingData(),  // Memanggil stream dari fetchSmokingDataToday
+  builder: (context, snapshot) {
+    if (snapshot.connectionState == ConnectionState.waiting) {
+      return Center(child: CircularProgressIndicator());
+    }
+
+    if (snapshot.hasError) {
+      return Center(child: Text('Terjadi kesalahan: ${snapshot.error}'));
+    }
+
+    if (!snapshot.hasData || snapshot.data!.isEmpty) {
+      return Center(child: Text('Tidak ada data untuk hari ini dan kemarin'));
+    }
+
+    List<Map<String, dynamic>> data = snapshot.data!;
+
+    // Filter untuk data hari ini dan kemarin
+    String today = "${DateTime.now().year}-${DateTime.now().month}-${DateTime.now().day}";
+    String yesterday = "${DateTime.now().subtract(Duration(days: 1)).year}-${DateTime.now().subtract(Duration(days: 1)).month}-${DateTime.now().subtract(Duration(days: 1)).day}";
+
+    // Memisahkan data hari ini dan kemarin
+    List<Map<String, dynamic>> todayData = data.where((item) => item['tanggal'] == today).toList();
+    List<Map<String, dynamic>> yesterdayData = data.where((item) => item['tanggal'] == yesterday).toList();
+    int todayCount = todayData.isNotEmpty ? todayData[0]['count'] ?? 0 : 0;
+    int yesterdayCount = yesterdayData.isNotEmpty ? yesterdayData[0]['count'] ?? 0 : 0;
+    int reduceCount = yesterdayCount - todayCount;
+
+
+  
+
+      return Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
                   Column(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-                      Text('Today Left',
+                      Text('Today smoke',
                       style: GoogleFonts.quicksand(
                       textStyle: TextStyle(
                         fontSize: 16,
@@ -225,7 +274,7 @@ class HomeContent extends StatelessWidget {
                 CircleAvatar(
                   backgroundColor: Colors.white,
                   radius: 30,
-                  child: Text('12',
+                  child: Text('$todayCount',
                       style: GoogleFonts.quicksand(
                       textStyle: TextStyle(
                         fontSize: 16,
@@ -252,7 +301,7 @@ class HomeContent extends StatelessWidget {
                 CircleAvatar(
                   backgroundColor: Colors.white,
                   radius: 30,
-                  child: Text('12',
+                  child: Text('$yesterdayCount',
                       style: GoogleFonts.quicksand(
                       textStyle: TextStyle(
                         fontSize: 16,
@@ -267,7 +316,7 @@ class HomeContent extends StatelessWidget {
                   Column(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-                      Text('Reduced',
+                      Text('Reduce',
                       style: GoogleFonts.quicksand(
                       textStyle: TextStyle(
                         fontSize: 16,
@@ -279,7 +328,7 @@ class HomeContent extends StatelessWidget {
                 CircleAvatar(
                   backgroundColor: Colors.white,
                   radius: 30,
-                  child: Text('12',
+                  child: Text('$reduceCount',
                       style: GoogleFonts.quicksand(
                       textStyle: TextStyle(
                         fontSize: 16,
@@ -292,8 +341,8 @@ class HomeContent extends StatelessWidget {
                     ],
                   ),
                 ],
-              ),
-            ),
+              );
+  }),),
             Padding(padding: EdgeInsets.all(5)),
            Carousel(
                 textList: [
@@ -303,7 +352,7 @@ class HomeContent extends StatelessWidget {
               'Menjauhkan diri dari rokok membantu menciptakan lingkungan yang lebih sehat untuk anak-anak dan orang tersayang.',
               'Berhenti merokok adalah langkah penting untuk menjadi contoh yang baik bagi generasi mendatang.',
                 ])
-          ],
+        ],
         ),
       ),
      

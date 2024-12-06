@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'register.dart'; // Import halaman registrasi
+import 'package:google_fonts/google_fonts.dart';
+import 'register.dart';
+import 'package:smokeless/services/auth.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -10,86 +12,164 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
+  String? errorMessage = '';
+  bool isLogin = true;
+  bool isLoading = false;
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+
+  Future<void> signInWithEmailAndPassword() async {
+        setState(() {
+      isLoading = true; // Set loading ke true saat login dimulai
+    });
+    try {
+      await Auth().signInWithEmailAndPassword(
+        email: _emailController.text, 
+        password: _passwordController.text,
+      );
+    } on FirebaseAuthException catch (e) {
+      setState(() {
+        errorMessage = e.message;
+        isLoading = false;
+      });
+    }
+  }
+  
+
+  Future<void> createUserWithEmailAndPassword() async {
+        setState(() {
+      isLoading = true; // Set loading ke true saat login dimulai
+    });
+    try {
+      await Auth().createUserWithEmailAndPassword(
+        email: _emailController.text, 
+        password: _passwordController.text);
+    } on FirebaseAuthException catch (e) {
+      setState(() {
+        errorMessage = e.message;
+        isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Login Page')),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // Tab Login & Register
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+    final screenWidth = MediaQuery.of(context).size.width;
+
+   return Scaffold(
+      backgroundColor: Colors.white, // Warna background halaman
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20.0),
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                GestureDetector(
-                  onTap: () {}, // Tetap di login
-                  child: const Text(
+                SizedBox(height: 100,),
+                // Gambar/logo
+                Text('Login Here!',style: GoogleFonts.quicksand(
+    textStyle: TextStyle(
+      fontSize: 30,
+      fontWeight: FontWeight.bold,
+      color: Color(0xFFAA0810), // Warna isi teks,
+                ),)),                
+                const SizedBox(height: 25), // Jarak antar logo dan form login
+                Text('Welcome Back You`ve been missed',
+                style: GoogleFonts.quicksand(
+    textStyle: TextStyle(
+      fontSize: 20,
+      fontWeight: FontWeight.bold,
+      color: Colors.black,),)),
+                const SizedBox(height: 75), // Jarak antar logo dan form login
+
+                // Form input email
+                TextField(
+                  controller: _emailController,
+                  decoration: InputDecoration(
+                    labelText: 'Email',
+                    labelStyle: GoogleFonts.quicksand(),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    prefixIcon: Icon(Icons.email),
+                  ),
+                  keyboardType: TextInputType.emailAddress,
+                ),
+
+                SizedBox(height: 20), // Jarak antar input
+                
+                // Form input password
+                TextField(
+                  controller: _passwordController,
+                  obscureText: true,
+                  decoration: InputDecoration(
+                    labelText: 'Password',
+                    labelStyle: GoogleFonts.quicksand(),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    prefixIcon: Icon(Icons.lock),
+                  ),
+                ),
+                
+                SizedBox(height: 40), // Jarak antar input dan tombol
+                
+                // Tombol login
+                ElevatedButton(
+                  onPressed: (_login),
+                  
+                    // Logika login bisa ditambahkan di sin
+                  style: ElevatedButton.styleFrom(
+                    padding: EdgeInsets.symmetric(vertical: 15, horizontal: screenWidth * 0.4),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    backgroundColor: Color(0xFFAA0810), // Warna tombol
+                  ),
+                  child: isLoading
+      ? CircularProgressIndicator(
+          color: Colors.black, // Warna loading indicator
+        )
+                 : Text(
                     'Login',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      decoration: TextDecoration.underline,
-                      fontSize: 20,
+                    style: GoogleFonts.quicksand(
+                      color: Colors.white,
+                      fontSize: 16,
                     ),
                   ),
                 ),
-                const SizedBox(width: 20),
-                GestureDetector(
-                  onTap: () {
-                    Navigator.push(
+                
+                SizedBox(height: 20), // Jarak antara tombol login dan link ke halaman registrasi
+
+                // Link ke halaman registrasi
+                TextButton(
+                  onPressed: () {
+                      Navigator.push(
                       context,
                       MaterialPageRoute(builder: (context) => const RegisterPage()),
                     );
+                    // Logika untuk navigasi ke halaman registrasi
                   },
-                  child: const Text(
-                    'Register',
-                    style: TextStyle(
-                      color: Colors.grey,
-                      fontSize: 20,
+                  child: Text(
+                    'Belum punya akun? Daftar',
+                    style: GoogleFonts.quicksand(
+                      color: Color(0xFFAA0810),
+                      fontSize: 14,
                     ),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 20),
-            // Input Email
-            TextField(
-              controller: _emailController,
-              decoration: const InputDecoration(
-                labelText: 'Email Address',
-                prefixIcon: Icon(Icons.email),
-              ),
-            ),
-            const SizedBox(height: 10),
-            // Input Password
-            TextField(
-              controller: _passwordController,
-              decoration: const InputDecoration(
-                labelText: 'Password',
-                prefixIcon: Icon(Icons.lock),
-              ),
-              obscureText: true,
-            ),
-            const SizedBox(height: 20),
-            // Tombol Login
-            ElevatedButton(
-              onPressed: _login,
-              style: ElevatedButton.styleFrom(
-                minimumSize: const Size(double.infinity, 50),
-              ),
-              child: const Text('Login'),
-            ),
-          ],
+          ),
         ),
       ),
     );
-  }
-
+  } 
   Future<void> _login() async {
+    setState(() {
+      isLoading = true; // Mulai loading saat tombol ditekan
+    });
     try {
       await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: _emailController.text,
@@ -97,9 +177,12 @@ class _LoginPageState extends State<LoginPage> {
       );
       print('Login Successful');
       // Arahkan ke halaman utama setelah login berhasil
-      Navigator.pushReplacementNamed(context, '/home');
+      Navigator.pushReplacementNamed(context, '/Home');
     } catch (e) {
       print('Login Error: $e');
     }
   }
 }
+
+
+

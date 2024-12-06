@@ -10,12 +10,7 @@ class Profile extends StatelessWidget {
         title: Text('Profile'),
         backgroundColor: Color(0xFFAA0810), // Warna AppBar
       ),
-      body: Center(
-        child: Text(
-          'This is the Profile Page',
-          style: TextStyle(fontSize: 24),
-        ),
-      ),
+      body: Text('Hello')
     );
   }
 }
